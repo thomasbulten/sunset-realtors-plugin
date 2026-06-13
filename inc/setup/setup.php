@@ -3,15 +3,15 @@
 /**
  * Setup
  *
- * @package BP_Plugin
+ * @package TAB\Sunset_Realtors
  */
 
 declare(strict_types=1);
 
-namespace BP\Plugin\Setup;
+namespace TAB\Sunset_Realtors\Setup;
 
 require_once __DIR__ . '/setup-activation.php';
 require_once __DIR__ . '/setup-assets.php';
-require_once __DIR__ . '/setup-post-type.php';
-require_once __DIR__ . '/setup-taxonomy.php';
+require_once __DIR__ . '/setup-domain.php';
+// require_once __DIR__ . '/setup-options.php';
 require_once __DIR__ . '/setup-updater.php';

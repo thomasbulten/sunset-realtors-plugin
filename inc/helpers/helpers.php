@@ -1,14 +1,13 @@
 <?php
 
 /**
- * Plugin helpers
+ * Helpers
  *
- * @package BP_Plugin
+ * @package TAB\Sunset_Realtors
  */
 
 declare(strict_types=1);
 
-namespace BP\Plugin\Helpers;
+namespace TAB\Sunset_Realtors\Helpers;
 
 require_once __DIR__ . '/helpers-general.php';
-require_once __DIR__ . '/helpers-team-template.php';

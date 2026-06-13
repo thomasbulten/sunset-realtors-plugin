@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Plugin helpers General
+ * Helpers - General
  *
- * @package BP_Plugin
+ * @package TAB\Sunset_Realtors
  */
 
 declare(strict_types=1);
 
-namespace BP\Plugin\Helpers\General;
+namespace TAB\Sunset_Realtors\Helpers\General;
 
 /**
  * Escape svg
@@ -64,35 +64,4 @@ function get_names(array $class_list, bool $start_space = false): string
 
     $classes = implode(' ', $classes);
     return $start . $classes;
-}
-
-/**
- * Create a phone link
- *
- * @param string $phone_number Phone number.
- *
- * @return string
- */
-function create_phone_link(string $phone_number): string
-{
-    if (empty($phone_number)) {
-        return '';
-    }
-    $phone_number = preg_replace('/[^0-9+]/', '', $phone_number);
-    return 'tel:' . $phone_number;
-}
-
-/**
- * Create a mailto link
- *
- * @param string $email Email address.
- *
- * @return string
- */
-function create_mailto_link(string $email): string
-{
-    if (empty($email)) {
-        return '';
-    }
-    return 'mailto:' . $email;
 }

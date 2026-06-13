@@ -1,135 +1,113 @@
-name: CI/CD deploy prod
+name: Build and Deploy ZIP
 
 on:
-    push:
-        branches: [release/1.x.x]
-        paths:
-            - '**.css'
-            - '**.js'
-            - '**.php'
-            - 'composer.lock'
-            - '**.json'
-            - '**.yml'
-    pull_request:
-        branches: [release/1.x.x]
-        paths:
-            - '**.css'
-            - '**.js'
-            - '**.php'
-            - 'composer.lock'
-            - '**.json'
-            - '**.yml'
+  push:
+    branches:
+      - beta
+      - main
 
-# Cancels all previous workflow runs for pull requests that have not completed.
-concurrency:
-    # The concurrency group contains the workflow name and the branch name for pull requests
-    # or the commit hash for any other events.
-    group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
-    cancel-in-progress: true
+env:
+  BRANCH_NAME: ${{ github.ref_name }}
+  REPO_NAME: ${{ github.event.repository.name }} 
+  ZIP_NAME: ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
+
+permissions:
+  contents: write
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-        strategy:
-            matrix:
-                node: [20.x]
-                php: [8.2]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
 
-            - name: Get Composer cache directory
-              id: composer-cache
-              run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
 
-            - name: Cache node modules
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      **/node_modules
-                  key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install PHP dependencies
+        run: |
+          composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader
 
-            - name: Set up Node.js ${{ matrix.node }}
-              uses: actions/setup-node@v3
-              with:
-                  node-version: ${{ matrix.node }}
+      - name: Install dependencies and build assets
+        run: |
+          npm ci
+          npm run build
+          rm -rf node_modules
 
-            - name: Install & build Plugin
-              run: npm install && npm run build
+      - name: Create ZIP
+        run: |
+          mkdir -p "$REPO_NAME"
+          shopt -s extglob
+          mv !("$REPO_NAME") "$REPO_NAME"/
+          zip -r "$ZIP_NAME" "$REPO_NAME" \
+            --exclude "*/.*" \
+            --exclude "*.git*" \
+            --exclude "*.psd" \
+            --exclude "*.yml" \
+            --exclude "*.zip" \
+            --exclude "$REPO_NAME/.env" \
+            --exclude "$REPO_NAME/README.md" \
+            --exclude "$REPO_NAME/$REPO_NAME.json" \
+            --exclude "$REPO_NAME/phpcs.xml.dist" \
+            --exclude "$REPO_NAME/postcss.config.cjs"
 
-            - name: Set up Composer caching
-              uses: actions/cache@v3
-              env:
-                  cache-name: cache-composer-dependencies
-              with:
-                  path: ${{ steps.composer-cache.outputs.dir }}
-                  key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-                  restore-keys: |
-                      ${{ runner.os }}-composer-
+      - name: Upload ZIP as artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ env.REPO_NAME }}-${{ env.BRANCH_NAME }}
+          path: ${{ env.ZIP_NAME }}
 
-            - name: Set up PHP
-              uses: shivammathur/setup-php@v2
-              with:
-                  php-version: ${{ matrix.php }}
-                  coverage: none
-                  tools: composer, cs2pr
+      - name: Upload ZIP to remote server via FTP
+        run: |
+          curl --upload-file "$ZIP_NAME" \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "${{ secrets.FTP_URL_PLUGINS }}"
 
-            - name: Log debug information
-              run: |
-                  php --version
-                  composer --version
+      - name: Upload JSON to remote server via FTP
+        run: |
+          curl --upload-file "$REPO_NAME/$REPO_NAME.json" \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "${{ secrets.FTP_URL_PLUGINS }}"
 
-            - name: Install Composer dependencies
-              run: |
-                  composer install --prefer-dist --no-suggest --no-progress --no-ansi --no-interaction
+      - name: Read version from JSON
+        id: version
+        run: |
+          VERSION=$(jq -r '.version_beta // empty' "$REPO_NAME/$REPO_NAME.json")
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "version_beta missing in $REPO_NAME/$REPO_NAME.json" >&2
+            exit 1
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
-            - name: Cleanup package
-              run: |
-                  rm -rf node_modules && echo node_modules "deleted"
-                  rm -rf vendor && echo vendor "deleted"
-                  rm -rf src && echo src "deleted"
-                  rm -rf packages && echo packages "deleted"
-                  rm -rf .editorconfig && echo .editorconfig "deleted"
-                  rm -rf .eslintignore && echo .eslintignore "deleted"
-                  rm -rf .eslintrc.js && echo .eslintrc.js "deleted"
-                  rm -rf .gitignore && echo .gitignore "deleted"
-                  rm -rf .prettierignore && echo .prettierignore "deleted"
-                  rm -rf .prettierrc.js && echo .prettierrc.js "deleted"
-                  rm -rf .stylelintignore && echo .stylelintignore "deleted"
-                  rm -rf .stylelintrc.js && echo .stylelintrc.js "deleted"
-                  rm -rf composer.lock && echo composer.lock "deleted"
-                  rm -rf package.json && echo package.json "deleted"
-                  rm -rf package-lock.json && echo package-lock.json "deleted"
-                  rm -rf phpcs.xml.dist && echo phpcs.xml.dist "deleted"
-                  rm -rf postcss.config.js && echo postcss.config.js "deleted"
-                  rm -rf webpack.config.js && echo webpack.config.js "deleted"
-                  rm -rf .git && echo .git "deleted"
-                  rm -rf .github && echo .github "deleted"
-                  rm -rf .husky && echo .husky "deleted"
+      - name: Check if release already exists
+        id: release_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ steps.version.outputs.value }}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
-            - name: Prepare Package deploy package
-              run: |
-                  mkdir ${{secrets.PACKAGE_NAME}}
-                  rsync -a --exclude '${{secrets.PACKAGE_NAME}}' . ${{secrets.PACKAGE_NAME}}/
-                  zip -r ${{secrets.PACKAGE_NAME}}.zip ${{secrets.PACKAGE_NAME}}
-
-            - name: Push to server
-              working-directory: ./
-              run: |
-                  echo "::group::Setup Auth Keys"
-                  mkdir ~/.ssh
-                  echo "${{ secrets.SSH_REMOTE_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-                  chmod 600 ~/.ssh/id_rsa
-                  echo "::endgroup::"
-                  echo "::group::Pre-approve rsync destination"
-                  echo "${{ secrets.SSH_REMOTE_HOST_KEY }}" > ~/.ssh/known_hosts
-                  echo "::endgroup::"
-                  echo "::group::Rsync files"
-                  sshpass -p ${{ secrets.SSH_REMOTE_PASS }} rsync -avz --delete -e "ssh -p ${{ secrets.SSH_REMOTE_PORT }}" ${{secrets.PACKAGE_NAME}}.zip ${{ secrets.SSH_REMOTE_USER }}@${{ secrets.SSH_REMOTE_ADDRESS }}:${{ secrets.SSH_REMOTE_PATH }}/
-                  echo "::endgroup::"
-
-            - name: Generate meta file
-              run: |
-                  curl -Is ${{ secrets.SSH_REMOTE_DOMAIN }}/packages/get-info.php?action=cron | head -1
+      - name: Create GitHub release
+        if: steps.release_check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.value }}" \
+            "$ZIP_NAME" \
+            --repo "${{ github.repository }}" \
+            --title "${{ steps.version.outputs.value }}" \
+            --prerelease \
+            --generate-notes

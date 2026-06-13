@@ -1,14 +1,16 @@
 <?php
 
 /**
- * Setup post types
+ * Setup Assets
  *
- * @package BP_Plugin
+ * @package TAB\Sunset_Realtors
  */
 
 declare(strict_types=1);
 
-namespace BP\Plugin\Setup\Assets;
+namespace TAB\Sunset_Realtors\Setup\Assets;
+
+use function TAB\Sunset_Realtors\Helpers\Settings\get_frontend_strings;
 
 // Setup Assets.
 add_action('wp_enqueue_scripts', __NAMESPACE__ . '\\main_assets');
@@ -16,8 +18,8 @@ add_action('wp_enqueue_scripts', __NAMESPACE__ . '\\main_assets');
 // Setup Admin Assets.
 add_action('admin_enqueue_scripts', __NAMESPACE__ . '\\admin_assets');
 
-// Setup Meta Fields.
-add_action('enqueue_block_editor_assets', __NAMESPACE__ . '\\meta_settings');
+// Setup module type attribute
+add_filter('script_loader_tag', __NAMESPACE__ . '\\add_module_type', 10, 3);
 
 /**
  * Main assets
@@ -26,22 +28,8 @@ add_action('enqueue_block_editor_assets', __NAMESPACE__ . '\\meta_settings');
  */
 function main_assets(): void
 {
-    // Styles.
-    wp_enqueue_style(
-        'bp-plugin-styles',
-        plugins_url('../../assets/css/style.css', __FILE__),
-        [],
-        BP_PLUGIN_VERSION
-    );
-
-    // Scripts.
-    wp_enqueue_script_module(
-        'bp-plugin-scripts',
-        plugins_url('../../assets/js/script.js', __FILE__),
-        [],
-        BP_PLUGIN_VERSION,
-        true
-    );
+    enqueue_vite_assets('main');
+    localize_main_assets();
 }
 
 /**
@@ -51,12 +39,22 @@ function main_assets(): void
  */
 function admin_assets(): void
 {
-    // Styles.
-    wp_enqueue_style(
-        'bp-plugin-admin-styles',
-        plugins_url('../../assets/css/admin.css', __FILE__),
-        [],
-        BP_PLUGIN_VERSION
+    enqueue_vite_assets('admin');
+}
+
+/**
+ * Pass frontend strings to the store locator script.
+ *
+ * @return void
+ */
+function localize_main_assets(): void
+{
+    $strings = get_frontend_strings();
+
+    wp_add_inline_script(
+        'sunset-realtors-plugin-main',
+        'window.yslStoreLocator = ' . wp_json_encode(['strings' => $strings]) . ';',
+        'before'
     );
 }
 
@@ -68,7 +66,7 @@ function admin_assets(): void
  */
 function get_file_uri(string $file): string
 {
-    return BP_PLUGIN_DIR_URL . '/build/' . $file;
+    return SUNSET_REALTORS_PLUGIN_DIR_URL . '/build/' . $file;
 }
 
 /**
@@ -79,35 +77,119 @@ function get_file_uri(string $file): string
  */
 function get_file_path(string $file): string
 {
-    return BP_PLUGIN_DIR_PATH . '/build/' . $file;
+    return SUNSET_REALTORS_PLUGIN_DIR_PATH . '/build/' . $file;
 }
 
 /**
- * Meta settings
+ * Check if Vite dev server is running
  *
+ * @return bool
+ */
+function is_vite_dev_server(): bool
+{
+    $manifest_path = get_file_path('assets/manifest.json');
+    return ! file_exists($manifest_path);
+}
+
+/**
+ * Get Vite dev server URL
+ *
+ * @return string
+ */
+function get_vite_dev_server_url(): string
+{
+    return 'http://localhost:5173';
+}
+
+/**
+ * Enqueue Vite assets
+ *
+ * @param  string $entry Entry point name (main or admin).
  * @return void
  */
-function meta_settings(): void
+function enqueue_vite_assets(string $entry): void
 {
+    if (is_vite_dev_server()) {
+        // Development mode - use Vite dev server
+        $dev_url = get_vite_dev_server_url();
 
-    // Meta.
-    $meta_deps_path = get_file_path('/meta-fields/meta-fields.assets.php');
-    $meta_path      = get_file_path('meta-fields/meta-fields.js');
+        // Enqueue Vite client for HMR (must be a module)
+        wp_enqueue_script_module(
+            'sunset-realtors-plugin-vite-client',
+            $dev_url . '/@vite/client',
+            [],
+            null
+        );
 
-    $meta_script_dependencies = file_exists($meta_deps_path) ?
-        require $meta_deps_path :
-        [
-            'dependencies' => [],
-            'version'      => filemtime($meta_path),
-        ];
+        // Enqueue entry point
+        wp_enqueue_script_module(
+            'sunset-realtors-plugin-' . $entry,
+            $dev_url . '/assets/js/' . $entry . '.js',
+            ['sunset-realtors-plugin-vite-client'],
+            null
+        );
+    } else {
+        // Production mode - use manifest
+        $manifest_path = get_file_path('assets/manifest.json');
 
-    \wp_register_script(
-        'bp-plugin-meta-fields',
-        get_file_uri('meta-fields/meta-fields.js'),
-        $meta_script_dependencies['dependencies'],
-        $meta_script_dependencies['version'],
-        true
-    );
+        if (! file_exists($manifest_path)) {
+            return;
+        }
 
-    \wp_enqueue_script('bp-plugin-meta-fields');
+        $manifest = json_decode(file_get_contents($manifest_path), true);
+        $entry_file = 'assets/js/' . $entry . '.js';
+
+        if (! isset($manifest[$entry_file])) {
+            return;
+        }
+
+        $entry_data = $manifest[$entry_file];
+
+        // Enqueue CSS
+        if (isset($entry_data['css'])) {
+            foreach ($entry_data['css'] as $css_file) {
+                wp_enqueue_style(
+                    'sunset-realtors-plugin-' . $entry . '-styles',
+                    get_file_uri('assets/' . $css_file),
+                    [],
+                    SUNSET_REALTORS_PLUGIN_VERSION
+                );
+            }
+        }
+
+        // Enqueue JS
+        wp_enqueue_script_module(
+            'sunset-realtors-plugin-' . $entry,
+            get_file_uri('assets/' . $entry_data['file']),
+            [],
+            SUNSET_REALTORS_PLUGIN_VERSION
+        );
+    }
+}
+
+/**
+ * Add type="module" to script tags for Vite modules
+ *
+ * @param  string $tag    The script tag.
+ * @param  string $handle The script handle.
+ * @param  string $src    The script source.
+ * @return string
+ */
+function add_module_type(string $tag, string $handle, string $src): string
+{
+    // Only add module type to our Vite scripts
+    if (
+        0 === strpos($handle, 'sunset-realtors-plugin-') &&
+        (is_vite_dev_server() || false !== strpos($src, '/build/assets/'))
+    ) {
+        // Check if type attribute already exists
+        if (false === strpos($tag, 'type=')) {
+            $tag = str_replace('<script ', '<script type="module" ', $tag);
+        } elseif (false === strpos($tag, 'type="module"') && false === strpos($tag, "type='module'")) {
+            // Replace existing type attribute with module
+            $tag = preg_replace('/type=["\'][^"\']*["\']/', 'type="module"', $tag);
+        }
+    }
+
+    return $tag;
 }

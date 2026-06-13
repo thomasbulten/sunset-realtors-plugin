@@ -1,0 +1,12 @@
+{
+	"extends": [ "@wordpress/stylelint-config/scss-stylistic" ],
+	"rules": {
+		"scss/at-rule-no-unknown": [
+			true,
+			{
+				"ignoreAtRules": [ "mixin", "define-mixin" ]
+			}
+		],
+		"@stylistic/string-quotes": "single"
+	}
+}

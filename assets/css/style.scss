@@ -1,0 +1,12 @@
+/**
+ * Main styles
+ */
+
+/* Components styles */
+@use './components/components.scss' as *;
+
+/* Layouts styles */
+@use './layouts/layouts.scss' as *;
+
+/* Shortcodes styles */
+@use './shortcodes/shortcodes.scss' as *;

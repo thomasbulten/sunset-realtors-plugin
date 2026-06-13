@@ -1,0 +1,29 @@
+{
+    "name": "Sunset Realtors Plugin",
+    "version": "0.1.0",
+    "version_beta": "0.1.0",
+    "download_url": "https://tabitdevelopment.nl/packages/plugins/sunset-realtors-plugin.zip",
+    "download_url_beta": "https://tabitdevelopment.nl/packages/plugins/sunset-realtors-plugin-beta.zip",
+    "homepage": "https://tabitdevelopment.nl/",
+    "requires": "6.8.0",
+    "tested": "6.8.0",
+    "last_updated": "2026-06-13 10:10:00",
+    "upgrade_notice": "There is a new version available that could contain new features or necessary changes to enhance the user experience.",
+    "author": "TAB IT Development",
+    "author_homepage": "https://tabitdevelopment.nl/over-ons/",
+    "sections": {
+        "description": "The Support Plugin for Sunset Realtors. "
+    },
+    "icons": {
+        "1x": "https://tabitdevelopment.nl/packages/banners/icon-512x512.png",
+        "2x": "https://tabitdevelopment.nl/packages/banners/icon-512x512.png"
+    },
+    "banners": {
+        "low": "https://tabitdevelopment.nl/packages/banners/banner-772x250.png",
+        "high": "https://tabitdevelopment.nl/packages/banners/banner-1544x500.png"
+    },
+    "rating": 100,
+    "num_ratings": 1,
+    "downloaded": 0,
+    "active_installs": 0
+}

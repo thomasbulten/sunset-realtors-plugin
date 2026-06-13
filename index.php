@@ -3,7 +3,7 @@
 /**
  * Index
  *
- * @package BP_Plugin
+ * @package TAB\Sunset_Realtors
  */
 
 declare(strict_types=1);

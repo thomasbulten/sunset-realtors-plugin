@@ -1,7 +1,7 @@
 {
-	"name": "tabit/bp-plugin",
-	"description": "The Boilerplate for WordPress Plugins.",
-	"homepage": "https://tabitdevelopment.nl",
+	"name": "tab/sunset-realtors-plugin",
+	"description": "The Support Plugin for Sunset Realtors.",
+	"homepage": "https://sunset-realtors.com",
 	"license": "GPL-3.0-or-later",
 	"config": {
 		"sort-packages": true,

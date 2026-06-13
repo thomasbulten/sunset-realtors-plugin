@@ -20,3 +20,6 @@ vendor/
 # Other
 debug.log
 wp-debug.log
+
+# MacOS
+.DS_Store

@@ -3,3 +3,7 @@ dist
 build
 vendor
 *.min.js
+inc/updater
+assets/js/admin.js
+assets/js/main.js
+vite.config.js

@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Plugin meta
+ * Meta
  *
- * @package BP_Plugin
+ * @package TAB\Sunset_Realtors
  */
 
 declare(strict_types=1);
 
-namespace BP\Plugin\Meta;
+namespace TAB\Sunset_Realtors\Meta;
 
-require_once __DIR__ . '/meta-page.php';
+require_once __DIR__ . '/meta-setup.php';
