@@ -1,0 +1,68 @@
+{
+    "name": "bp-plugin",
+    "version": "1.0.0",
+    "description": "The Boilerplate for WordPress Plugins.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/thomas-bulten/bp-plugin.git"
+    },
+    "author": "TAB IT Development",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/thomas-bulten/bp-plugin/issues"
+    },
+    "homepage": "https://github.com/thomas-bulten/bp-plugin#readme",
+    "engines": {
+        "node": "20.x.x",
+        "npm": ">=9",
+        "yarn": "Please use npm"
+    },
+    "devDependencies": {
+        "@dekode/stylelint-config": "1.0.2",
+        "@wordpress/eslint-plugin": "^21.4.0",
+        "@wordpress/scripts": "^30.4.0",
+        "husky": "9.1.6",
+        "ignore-emit-webpack-plugin": "^2.0.6",
+        "lint-staged": "^15.2.10",
+        "postcss-custom-media": "^11.0.1",
+        "postcss-flexbugs-fixes": "^5.0.2",
+        "postcss-import": "^16.1.0",
+        "postcss-media-minmax": "^5.0.0",
+        "postcss-mixins": "^11.0.1",
+        "postcss-nested": "^6.2.0",
+        "prettier": "^3.3.3",
+        "resolve-url-loader": "^5.0.0",
+        "cssnano": "^7.0.6",
+        "autoprefixer": "^10.4.20"
+    },
+    "scripts": {
+        "build": "npm run build:blocks && npm run build:meta",
+        "build:blocks": "wp-scripts build --webpack-src-dir=src/block-library --output-path=build/block-library --webpack-copy-php && wp-scripts build-blocks-manifest",
+        "build:meta": "wp-scripts build src/meta-fields --webpack-src-dir=src/meta-fields --output-path=build/meta-fields",
+        "watch": "npm run watch:blocks && npm run watch:meta",
+        "watch:blocks": "wp-scripts start --webpack-src-dir=src/block-library --output-path=build/block-library --webpack-copy-php && wp-scripts build-blocks-manifest",
+        "watch:meta": "wp-scripts start src/meta-fields --webpack-src-dir=src/meta-fields --output-path=build/meta-fields",
+        "check-engines": "wp-scripts check-engines",
+        "check-licenses": "wp-scripts check-licenses",
+        "format": "prettier --write",
+        "lint": "npm run lint:js && npm run lint:css",
+        "lint:css": "wp-scripts lint-style",
+        "lint:js": "wp-scripts lint-js",
+        "lint-staged": "lint-staged",
+        "prepare": "husky install"
+    },
+    "lint-staged": {
+        "*.css": [
+            "wp-scripts lint-style"
+        ],
+        "*.{js,ts,tsx}": [
+            "prettier --write",
+            "wp-scripts lint-js"
+        ]
+    },
+    "dependencies": {
+        "autoprefixer": "^10.4.20",
+        "classnames": "^2.5.1",
+        "uuid": "^11.0.3"
+    }
+}

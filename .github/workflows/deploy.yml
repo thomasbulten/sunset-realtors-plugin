@@ -1,0 +1,135 @@
+name: CI/CD deploy prod
+
+on:
+    push:
+        branches: [release/1.x.x]
+        paths:
+            - '**.css'
+            - '**.js'
+            - '**.php'
+            - 'composer.lock'
+            - '**.json'
+            - '**.yml'
+    pull_request:
+        branches: [release/1.x.x]
+        paths:
+            - '**.css'
+            - '**.js'
+            - '**.php'
+            - 'composer.lock'
+            - '**.json'
+            - '**.yml'
+
+# Cancels all previous workflow runs for pull requests that have not completed.
+concurrency:
+    # The concurrency group contains the workflow name and the branch name for pull requests
+    # or the commit hash for any other events.
+    group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+    cancel-in-progress: true
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        strategy:
+            matrix:
+                node: [20.x]
+                php: [8.2]
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Get Composer cache directory
+              id: composer-cache
+              run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+            - name: Cache node modules
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      **/node_modules
+                  key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+            - name: Set up Node.js ${{ matrix.node }}
+              uses: actions/setup-node@v3
+              with:
+                  node-version: ${{ matrix.node }}
+
+            - name: Install & build Plugin
+              run: npm install && npm run build
+
+            - name: Set up Composer caching
+              uses: actions/cache@v3
+              env:
+                  cache-name: cache-composer-dependencies
+              with:
+                  path: ${{ steps.composer-cache.outputs.dir }}
+                  key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-composer-
+
+            - name: Set up PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+                  tools: composer, cs2pr
+
+            - name: Log debug information
+              run: |
+                  php --version
+                  composer --version
+
+            - name: Install Composer dependencies
+              run: |
+                  composer install --prefer-dist --no-suggest --no-progress --no-ansi --no-interaction
+
+            - name: Cleanup package
+              run: |
+                  rm -rf node_modules && echo node_modules "deleted"
+                  rm -rf vendor && echo vendor "deleted"
+                  rm -rf src && echo src "deleted"
+                  rm -rf packages && echo packages "deleted"
+                  rm -rf .editorconfig && echo .editorconfig "deleted"
+                  rm -rf .eslintignore && echo .eslintignore "deleted"
+                  rm -rf .eslintrc.js && echo .eslintrc.js "deleted"
+                  rm -rf .gitignore && echo .gitignore "deleted"
+                  rm -rf .prettierignore && echo .prettierignore "deleted"
+                  rm -rf .prettierrc.js && echo .prettierrc.js "deleted"
+                  rm -rf .stylelintignore && echo .stylelintignore "deleted"
+                  rm -rf .stylelintrc.js && echo .stylelintrc.js "deleted"
+                  rm -rf composer.lock && echo composer.lock "deleted"
+                  rm -rf package.json && echo package.json "deleted"
+                  rm -rf package-lock.json && echo package-lock.json "deleted"
+                  rm -rf phpcs.xml.dist && echo phpcs.xml.dist "deleted"
+                  rm -rf postcss.config.js && echo postcss.config.js "deleted"
+                  rm -rf webpack.config.js && echo webpack.config.js "deleted"
+                  rm -rf .git && echo .git "deleted"
+                  rm -rf .github && echo .github "deleted"
+                  rm -rf .husky && echo .husky "deleted"
+
+            - name: Prepare Package deploy package
+              run: |
+                  mkdir ${{secrets.PACKAGE_NAME}}
+                  rsync -a --exclude '${{secrets.PACKAGE_NAME}}' . ${{secrets.PACKAGE_NAME}}/
+                  zip -r ${{secrets.PACKAGE_NAME}}.zip ${{secrets.PACKAGE_NAME}}
+
+            - name: Push to server
+              working-directory: ./
+              run: |
+                  echo "::group::Setup Auth Keys"
+                  mkdir ~/.ssh
+                  echo "${{ secrets.SSH_REMOTE_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                  chmod 600 ~/.ssh/id_rsa
+                  echo "::endgroup::"
+                  echo "::group::Pre-approve rsync destination"
+                  echo "${{ secrets.SSH_REMOTE_HOST_KEY }}" > ~/.ssh/known_hosts
+                  echo "::endgroup::"
+                  echo "::group::Rsync files"
+                  sshpass -p ${{ secrets.SSH_REMOTE_PASS }} rsync -avz --delete -e "ssh -p ${{ secrets.SSH_REMOTE_PORT }}" ${{secrets.PACKAGE_NAME}}.zip ${{ secrets.SSH_REMOTE_USER }}@${{ secrets.SSH_REMOTE_ADDRESS }}:${{ secrets.SSH_REMOTE_PATH }}/
+                  echo "::endgroup::"
+
+            - name: Generate meta file
+              run: |
+                  curl -Is ${{ secrets.SSH_REMOTE_DOMAIN }}/packages/get-info.php?action=cron | head -1
