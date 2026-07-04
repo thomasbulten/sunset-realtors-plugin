@@ -6,8 +6,8 @@
  * Internal dependencies
  */
 import '../css/style.scss';
-import InitCustomComponent from './components/components-custom';
+import initCurrencySwitcher from './components/currency-switcher';
 
 document.addEventListener('DOMContentLoaded', () => {
-	InitCustomComponent();
+	initCurrencySwitcher();
 });

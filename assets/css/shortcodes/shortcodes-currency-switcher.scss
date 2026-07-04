@@ -1,0 +1,68 @@
+/**
+ * Shortcodes - currency switcher styles
+ */
+
+.sunset-currency-switcher {
+	position: relative;
+	display: inline-block;
+	padding: 0.25rem 0;
+
+	&__toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.25rem;
+		padding: 0.25rem 0.75rem;
+		font-size: 0.75rem;
+
+		&:is(:hover, :focus) {
+			background-color: var(--global-palette1) !important;
+			border-color: var(--global-palette1) !important;
+			color: var(--global-palette7) !important;
+		}
+
+		&[aria-expanded='true'] {
+			--currency-switcher-icon-transform: scaleY(-1);
+		}
+
+		&-icon {
+			display: flex;
+		}
+
+		&-icon svg {
+			width: 1rem;
+			height: 1rem;
+			transform: var(--currency-switcher-icon-transform, none);
+		}
+	}
+
+	&__list {
+		position: absolute;
+		z-index: 20;
+		top: 100%;
+		left: 0;
+		display: none;
+		min-width: 100%;
+		margin: 0.25rem 0 0;
+		list-style: none;
+		background-color: #fff;
+		border: 1px solid currentcolor;
+		border-radius: 0.25rem;
+
+		&.is-open {
+			display: block;
+		}
+	}
+
+	&__option {
+		padding: 0.4rem 0.75rem;
+		font-size: 0.75rem;
+		cursor: pointer;
+
+		&:is(:hover, :focus),
+		&.is-selected {
+			background-color: var(--global-palette1, #eee);
+			color: var(--global-palette7, inherit);
+		}
+	}
+}
