@@ -10,8 +10,6 @@ declare(strict_types=1);
 
 namespace TAB\Sunset_Realtors\Setup\Assets;
 
-use function TAB\Sunset_Realtors\Helpers\Settings\get_frontend_strings;
-
 // Setup Assets.
 add_action('wp_enqueue_scripts', __NAMESPACE__ . '\\main_assets');
 
@@ -29,7 +27,6 @@ add_filter('script_loader_tag', __NAMESPACE__ . '\\add_module_type', 10, 3);
 function main_assets(): void
 {
     enqueue_vite_assets('main');
-    localize_main_assets();
 }
 
 /**
@@ -40,22 +37,6 @@ function main_assets(): void
 function admin_assets(): void
 {
     enqueue_vite_assets('admin');
-}
-
-/**
- * Pass frontend strings to the store locator script.
- *
- * @return void
- */
-function localize_main_assets(): void
-{
-    $strings = get_frontend_strings();
-
-    wp_add_inline_script(
-        'sunset-realtors-plugin-main',
-        'window.yslStoreLocator = ' . wp_json_encode(['strings' => $strings]) . ';',
-        'before'
-    );
 }
 
 /**
