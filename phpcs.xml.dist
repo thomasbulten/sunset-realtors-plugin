@@ -4,18 +4,11 @@
 	<arg name="extensions" value="php" />
 	<config name="testVersion" value="8.1-" />
 	<rule ref="Dekode">
-		<!-- WPCS bugs on PHP 8.1+ (trim(null), nullable param); remove when WPCS is updated -->
-		<exclude name="WordPress.WP.I18n"/>
-		<exclude name="WordPress.WhiteSpace.PrecisionAlignment"/>
+		<!-- PrefixAllGlobals is noisy for plugin bootstrap files; re-enable when prefixes are standardized -->
 		<exclude name="WordPress.NamingConventions.PrefixAllGlobals"/>
-		<exclude name="WordPress.WhiteSpace.ControlStructureSpacing"/>
-		<exclude name="WordPress.WP.DeprecatedParameters"/>
-		<exclude name="WordPress.WhiteSpace.DisallowInlineTabs"/>
 	</rule>
 	<!-- Third-party code -->
 	<exclude-pattern>inc/updater/</exclude-pattern>
 	<!-- Template view: mostly HTML, no strict types -->
 	<exclude-pattern>src/templates/views/</exclude-pattern>
-	<!-- WPCS Sniff.php trim(null) on PHP 8.1+ when processing this file -->
-	<exclude-pattern>inc/setup/setup-assets\.php</exclude-pattern>
 </ruleset>

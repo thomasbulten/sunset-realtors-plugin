@@ -49,8 +49,11 @@
         "check-licenses": "wp-scripts check-licenses",
         "format": "prettier --write",
         "lint": "npm run lint:js && npm run lint:css",
+        "lint:fix": "npm run lint:js:fix && npm run lint:css:fix",
         "lint:css": "wp-scripts lint-style",
+        "lint:css:fix": "wp-scripts lint-style --fix",
         "lint:js": "wp-scripts lint-js",
+        "lint:js:fix": "wp-scripts lint-js --fix",
         "lint-staged": "lint-staged",
         "prepare": "husky install"
     },

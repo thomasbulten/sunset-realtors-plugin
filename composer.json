@@ -11,11 +11,10 @@
 		}
 	},
 	"require-dev": {
-		"dekode/coding-standards": "4.0.0",
-		"dealerdirect/phpcodesniffer-composer-installer": "^0.7.2",
+		"dekode/coding-standards": "6.5.0",
+		"dealerdirect/phpcodesniffer-composer-installer": "~1.2.0",
 		"phpcompatibility/php-compatibility": "^9.3",
-		"squizlabs/php_codesniffer": "^3.6",
-		"wp-coding-standards/wpcs": "^2.3"
+		"squizlabs/php_codesniffer": "^3.9"
 	},
 	"scripts": {
 		"lint": "phpcs",
