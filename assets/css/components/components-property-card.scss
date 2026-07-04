@@ -1,0 +1,57 @@
+/* stylelint-disable selector-class-pattern */
+
+/**
+ * Components - property card styles
+ */
+
+.c-property__right-col {
+	display: flex;
+	flex-direction: column-reverse;
+	justify-content: space-between;
+	padding: 0.5rem 0 1.5rem;
+
+	@media screen and (min-width: 1200px) {
+		flex-direction: row;
+		gap: 0.5rem;
+	}
+
+	.list & {
+		flex-direction: column;
+	}
+}
+
+.c-property__post-title {
+	font-size: clamp(15px, 4vw, 18px);
+	font-weight: 500;
+	line-height: 1.5;
+	letter-spacing: 0;
+	color: var(--global-palette5);
+	text-transform: none;
+
+	@media screen and (min-width: 1200px) {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		max-height: 54px;
+	}
+}
+
+.c-property__price {
+
+	.single-property & {
+		font-size: clamp(16px, 3vw, 20px);
+		font-weight: 600;
+		color: var(--global-palette2);
+	}
+
+	.c-property-card & {
+		flex-shrink: 0;
+		font-size: clamp(14px, 4vw, 16px);
+		font-weight: 400;
+		line-height: 1.5;
+		text-transform: none;
+		color: var(--global-palette2);
+		letter-spacing: 1px;
+	}
+}
