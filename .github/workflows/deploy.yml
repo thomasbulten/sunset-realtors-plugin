@@ -8,7 +8,7 @@ on:
 
 env:
   BRANCH_NAME: ${{ github.ref_name }}
-  REPO_NAME: ${{ github.event.repository.name }} 
+  REPO_NAME: ${{ github.event.repository.name }}
   ZIP_NAME: ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
 
 permissions:
@@ -73,21 +73,34 @@ jobs:
             --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
             "${{ secrets.FTP_URL_PLUGINS }}"
 
+      - name: Prepare plugin JSON
+        id: version
+        run: |
+          PLUGIN_FILE="$REPO_NAME/$REPO_NAME.php"
+          VERSION=$(grep -m1 'Version:' "$PLUGIN_FILE" | sed -E 's/.*Version:[[:space:]]*([^[:space:]]+).*/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "Version not found in $PLUGIN_FILE" >&2
+            exit 1
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+          TIMESTAMP=$(TZ=Europe/Amsterdam date '+%Y-%m-%d %H:%M:%S')
+          if [ "$BRANCH_NAME" = "beta" ]; then
+            jq --arg v "$VERSION" --arg ts "$TIMESTAMP" \
+              '.version_beta = $v | .last_updated = $ts' \
+              "$REPO_NAME/$REPO_NAME.json" > tmp.json
+          else
+            jq --arg v "$VERSION" --arg ts "$TIMESTAMP" \
+              '.version = $v | .last_updated = $ts' \
+              "$REPO_NAME/$REPO_NAME.json" > tmp.json
+          fi
+          mv tmp.json "$REPO_NAME/$REPO_NAME.json"
+
       - name: Upload JSON to remote server via FTP
         run: |
           curl --upload-file "$REPO_NAME/$REPO_NAME.json" \
             --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
             "${{ secrets.FTP_URL_PLUGINS }}"
-
-      - name: Read version from JSON
-        id: version
-        run: |
-          VERSION=$(jq -r '.version_beta // empty' "$REPO_NAME/$REPO_NAME.json")
-          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-            echo "version_beta missing in $REPO_NAME/$REPO_NAME.json" >&2
-            exit 1
-          fi
-          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Check if release already exists
         id: release_check
