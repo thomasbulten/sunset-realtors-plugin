@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: Sunset Realtors Plugin
+ * Plugin Name: Yourstyle - Sunset Realtors
  * Plugin URI: https://tabitdevelopment.nl
  * Description: The Support Plugin for Sunset Realtors.
  * Author: TAB IT Development
@@ -26,12 +26,12 @@ require_once __DIR__ . '/inc/updater/plugin-update-checker.php';
 
 // Include Primary files.
 require_once __DIR__ . '/inc/setup/setup.php';
-require_once __DIR__ . '/inc/helpers/helpers.php';
-require_once __DIR__ . '/inc/api/api.php';
+// require_once __DIR__ . '/inc/helpers/helpers.php';
 
 // Include Secondary files.
-require_once __DIR__ . '/inc/blocks/blocks.php';
-require_once __DIR__ . '/inc/meta/meta.php';
+// require_once __DIR__ . '/inc/blocks/blocks.php';
+// require_once __DIR__ . '/inc/meta/meta.php';
+require_once __DIR__ . '/inc/shortcodes/shortcodes.php';
 
 // Register activation hook.
 // register_activation_hook(__FILE__, 'TAB\Sunset_Realtors\Setup\Activation\plugin_activation');
