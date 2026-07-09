@@ -13,11 +13,8 @@ namespace TAB\Sunset_Realtors\Setup\Updater;
 
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
-$my_updater = PucFactory::buildUpdateChecker(
-	'https://github.com/thomasbulten/' . SUNSET_REALTORS_PLUGIN_DOMAIN . '/',
-	SUNSET_REALTORS_PLUGIN_DIR_PATH . '/' . SUNSET_REALTORS_PLUGIN_DOMAIN . '.php',
+PucFactory::buildUpdateChecker(
+	'https://tabitdevelopment.nl/packages/plugins/sunset-realtors-plugin.json',
+	SUNSET_REALTORS_PLUGIN_DIR_PATH . '/sunset-realtors-plugin.php',
 	SUNSET_REALTORS_PLUGIN_DOMAIN
 );
-
-// Set the branch that contains the stable release.
-$my_updater->setBranch('main');
