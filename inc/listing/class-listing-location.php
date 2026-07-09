@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace TAB\Sunset_Realtors\Listing;
 
-final class Location
+final class Listing_Location
 {
     /** @var array<string> */
     private const HIDDEN_ADDRESS_FIELDS = [
@@ -30,7 +30,7 @@ final class Location
         add_filter('ysd_mapi_property_address', [self::class, 'filter_address'], 10, 3);
         add_filter('ysd_mapi_property_data_layout_items', [self::class, 'filter_data_layout_items'], 10, 3);
         add_filter('ysd_mapi_property_data_transfer_items', [self::class, 'filter_data_layout_items'], 10, 3);
-        add_filter('ysd_mapi_property_map_marker_content', [self::class, 'filter_map_marker'], 10, 2);
+        add_filter('ysd_mapi_property_map_all_houses', [self::class, 'filter_property_map_all_houses'], 10, 2);
     }
 
     /**
@@ -76,12 +76,19 @@ final class Location
     }
 
     /**
-     * @param string   $content  Marker popup content.
-     * @param \WP_Post $property Property post.
-     * @return string
+	 * Filter property map all houses.
+	 *
+	 * @param array<string, mixed> $all_houses All houses data.
+	 * @param \WP_Post 			   $post       Post.
+	 * @return array<string, mixed>
      */
-    public static function filter_map_marker(string $content, \WP_Post $property): string
+    public static function filter_property_map_all_houses(array $all_houses, \WP_Post $post): array
     {
-        return esc_html($property->post_title);
+		// Replace address with post title, empty number and city.
+		$all_houses['propertyAll']['address'] = $post->post_title;
+		$all_houses['propertyAll']['number'] = '';
+		$all_houses['propertyAll']['city'] = '';
+
+        return $all_houses;
     }
 }
