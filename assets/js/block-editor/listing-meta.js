@@ -61,10 +61,7 @@
 					value: employeeValue,
 					options: [
 						{
-							label: __(
-								'Automatisch (accountmanager)',
-								'sunset-realtors-plugin',
-							),
+							label: __('Standaard', 'sunset-realtors-plugin'),
 							value: '',
 						},
 						...(config.employees || []),
@@ -81,7 +78,7 @@
 				PanelRow,
 				null,
 				el(SelectControl, {
-					label: __('Basismunt prijs', 'sunset-realtors-plugin'),
+					label: __('Basismunt', 'sunset-realtors-plugin'),
 					value: priceCurrency,
 					options: (config.currencies || []).map((currency) => ({
 						label: currency,
