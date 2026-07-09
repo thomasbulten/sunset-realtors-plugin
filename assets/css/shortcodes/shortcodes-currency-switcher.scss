@@ -21,6 +21,10 @@
 			color: var(--global-palette7) !important;
 		}
 
+		&-label {
+			text-transform: none;
+		}
+
 		&[aria-expanded='true'] {
 			--currency-switcher-icon-transform: scaleY(-1);
 		}
