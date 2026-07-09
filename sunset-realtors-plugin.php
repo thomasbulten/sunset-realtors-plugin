@@ -26,7 +26,7 @@ require_once __DIR__ . '/inc/updater/plugin-update-checker.php';
 
 // Include Primary files.
 require_once __DIR__ . '/inc/setup/setup.php';
-// require_once __DIR__ . '/inc/helpers/helpers.php';
+require_once __DIR__ . '/inc/helpers/helpers.php';
 
 // Include Secondary files.
 // require_once __DIR__ . '/inc/blocks/blocks.php';
