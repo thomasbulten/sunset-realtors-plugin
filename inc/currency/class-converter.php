@@ -20,7 +20,17 @@ final class Converter {
 	public const SYMBOLS = [
 		'EUR' => '€',
 		'USD' => '$',
-		'ANG' => 'ƒ',
+		'ANG' => 'Cg',
+	];
+
+	/**
+	 * Currency codes as they should be shown as text. Internally we keep 'ANG',
+	 * but the Caribbean guilder's ISO code is 'XCG'.
+	 *
+	 * @var array<string, string>
+	 */
+	public const DISPLAY_CODES = [
+		'ANG' => 'XCG',
 	];
 
 	public const DEFAULT_DISPLAY_CURRENCY = 'EUR';
@@ -56,7 +66,8 @@ final class Converter {
 
 		foreach ( self::SUPPORTED_CURRENCIES as $currency ) {
 			$symbol            = self::SYMBOLS[ $currency ] ?? $currency;
-			$labels[ $currency ] = trim( $symbol . ' ' . $currency );
+			$code              = self::DISPLAY_CODES[ $currency ] ?? $currency;
+			$labels[ $currency ] = trim( $symbol . ' ' . $code );
 		}
 
 		return $labels;

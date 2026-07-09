@@ -68,7 +68,7 @@ function render_page(): void
                     </th>
                     <td>
                         <input type="password" id="sunset-exchangerate-api-key" name="<?php echo esc_attr(Rates_Service::OPTION_API_KEY); ?>" value="<?php echo esc_attr((string) get_option(Rates_Service::OPTION_API_KEY, '')); ?>" class="regular-text" autocomplete="off" <?php echo defined('SUNSET_EXCHANGERATE_API_KEY') && '' !== SUNSET_EXCHANGERATE_API_KEY ? 'disabled' : ''; ?>>
-                        <p class="description"><?php esc_html_e('API key van exchangerate-api.com voor EUR/USD/ANG koersen. Of definieer SUNSET_EXCHANGERATE_API_KEY in wp-config.php.', SUNSET_REALTORS_PLUGIN_DOMAIN); ?></p>
+                        <p class="description"><?php esc_html_e('API key van exchangerate-api.com voor EUR/USD/XCG koersen. Of definieer SUNSET_EXCHANGERATE_API_KEY in wp-config.php.', SUNSET_REALTORS_PLUGIN_DOMAIN); ?></p>
                     </td>
                 </tr>
                 <tr>
