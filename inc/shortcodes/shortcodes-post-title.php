@@ -22,6 +22,8 @@ function sunset_post_title_shortcode($args = []): string
 	);
 
 	$post_id	= get_queried_object_id();
+	$post_type  = get_post_type($post_id);
+	$post_id    = 'property' === $post_type ? $post_id : get_the_ID();
 	$post_title = get_the_title($post_id);
 
 	return sprintf(

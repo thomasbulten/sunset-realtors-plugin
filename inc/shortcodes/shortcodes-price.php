@@ -24,7 +24,7 @@ function sunset_price_shortcode( $args = [] ): string {
 		[
 			'id'    => '',
 			'tag'   => 'span',
-			'class' => '',
+			'class' => 'c-property__price sunset-property-price',
 		],
 		$args,
 		'sunset_price'
@@ -38,7 +38,7 @@ function sunset_price_shortcode( $args = [] ): string {
 		return '';
 	}
 
-	$class_names = trim( 'c-property__price sunset-property-price ' . $options['class'] );
+	$class_names = trim( $options['class'] );
 
 	if ( 'prijs_op_aanvraag' === get_post_meta( $post_id, 'price_type', true ) ) {
 		return sprintf(
