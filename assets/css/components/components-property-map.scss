@@ -1,0 +1,13 @@
+/* stylelint-disable selector-class-pattern */
+
+/**
+ * Components - map styles
+ */
+
+.property-map--street {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
+	max-height: 54px;
+}

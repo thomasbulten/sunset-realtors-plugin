@@ -2,4 +2,7 @@
  * Components styles
  */
 
+@use './components-currency-switcher.scss' as *;
+@use './components-employee.scss' as *;
 @use './components-property-card.scss' as *;
+@use './components-property-map.scss' as *;

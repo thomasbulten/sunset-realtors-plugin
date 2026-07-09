@@ -1,0 +1,45 @@
+/**
+ * Components - employee styles
+ */
+
+.c-employee {
+
+	&__list {
+		display: grid;
+		gap: var(--global-kb-spacing-sm, 1.5rem);
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	&__list-item {
+		display: grid;
+		column-gap: var(--global-kb-gap-md, 2rem);
+		row-gap: var(--global-kb-gap-md, 2rem);
+		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+	}
+
+	&__image-wrapper {
+		aspect-ratio: 1;
+		display: block;
+		height: auto;
+		width: auto;
+		border-radius: 50%;
+		overflow: hidden;
+		position: relative;
+		max-width: 200px;
+	}
+
+	&__image {
+		display: block;
+		height: 100%;
+		width: 100%;
+		object-fit: cover;
+	}
+
+	&__content {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+}
