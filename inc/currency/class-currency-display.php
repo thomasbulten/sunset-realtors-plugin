@@ -20,6 +20,7 @@ final class Currency_Display {
 	 * @return void
 	 */
 	public static function init(): void {
+		add_filter( 'ysd_mapi_property_data_table_row_price', [ self::class, 'filter_data_table_row_price' ], 10, 3 );
 		add_filter( 'ysd_mapi_formatted_locale_price', [ self::class, 'filter_formatted_price' ], 10, 2 );
 		add_action( 'save_post_' . Listing_Meta::POST_TYPE, [ self::class, 'sync_property_prices' ], 99, 2 );
 		add_action( 'before_delete_post', [ self::class, 'remove_property_prices' ] );
@@ -116,5 +117,28 @@ final class Currency_Display {
 		}
 
 		return $price;
+	}
+
+	/**
+	 * Filter the price data table row.
+	 *
+	 * @param string   $row_html The HTML for the data table row.
+	 * @param array    $row      The data for the data table row.
+	 * @param string   $name     The name of the data table row.
+	 * @return string
+	 */
+	public static function filter_data_table_row_price( string $row_html, array $row, string $name ): string {
+		$post_id = get_queried_object_id();
+		if ( 0 === $post_id ) {
+			return $row_html;
+		}
+
+		$price_shortcode = do_shortcode( '[sunset_price id="' . $post_id . '" class="sunset-property-price"]' );
+
+		return sprintf(
+			'<dt>%s</dt><dd>%s</dd>',
+			$row['label'],
+			$price_shortcode
+		);
 	}
 }
