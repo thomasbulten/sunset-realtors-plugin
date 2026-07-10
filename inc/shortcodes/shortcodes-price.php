@@ -82,7 +82,7 @@ function sunset_price_shortcode( $args = [] ): string {
 	return sprintf(
 		'<span class="%s"%s><span class="sunset-property-price__amount">%s</span>%s</span>',
 		esc_attr( $class_names ),
-		esc_attr( $attributes ),
+		$attributes,
 		esc_html( $display ),
 		$condition_html
 	);
