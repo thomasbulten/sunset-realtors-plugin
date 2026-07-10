@@ -18,6 +18,8 @@ final class Listing_Meta {
 
 	public const META_PRICE_CURRENCY = '_sunset_price_currency';
 
+	public const META_MATTERPORT_ID = '_sunset_matterport_id';
+
 	public const POST_TYPE = 'property';
 
 	/**
@@ -53,16 +55,19 @@ final class Listing_Meta {
 			self::POST_TYPE,
 			self::META_ASSIGNED_EMPLOYEE,
 			[
-				'type'              => 'integer',
+				'type'              => 'array',
 				'single'            => true,
 				'show_in_rest'      => [
 					'schema' => [
-						'type'    => 'integer',
-						'default' => 0,
+						'type'    => 'array',
+						'items'   => [
+							'type' => 'integer',
+						],
+						'default' => [],
 					],
 				],
-				'default'           => 0,
-				'sanitize_callback' => 'absint',
+				'default'           => [],
+				'sanitize_callback' => [ self::class, 'sanitize_assigned_employees' ],
 				'auth_callback'     => [ self::class, 'can_edit_meta' ],
 			]
 		);
@@ -82,6 +87,24 @@ final class Listing_Meta {
 				],
 				'default'           => 'EUR',
 				'sanitize_callback' => [ self::class, 'sanitize_currency' ],
+				'auth_callback'     => [ self::class, 'can_edit_meta' ],
+			]
+		);
+
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_MATTERPORT_ID,
+			[
+				'type'              => 'string',
+				'single'            => true,
+				'show_in_rest'      => [
+					'schema' => [
+						'type'    => 'string',
+						'default' => '',
+					],
+				],
+				'default'           => '',
+				'sanitize_callback' => [ self::class, 'sanitize_matterport_id' ],
 				'auth_callback'     => [ self::class, 'can_edit_meta' ],
 			]
 		);
@@ -105,7 +128,11 @@ final class Listing_Meta {
 		}
 
 		if ( array_key_exists( self::META_ASSIGNED_EMPLOYEE, $meta ) ) {
-			update_post_meta( $post->ID, self::META_ASSIGNED_EMPLOYEE, absint( $meta[ self::META_ASSIGNED_EMPLOYEE ] ) );
+			update_post_meta(
+				$post->ID,
+				self::META_ASSIGNED_EMPLOYEE,
+				self::sanitize_assigned_employees( $meta[ self::META_ASSIGNED_EMPLOYEE ] )
+			);
 		}
 
 		if ( array_key_exists( self::META_PRICE_CURRENCY, $meta ) ) {
@@ -113,6 +140,14 @@ final class Listing_Meta {
 				$post->ID,
 				self::META_PRICE_CURRENCY,
 				self::sanitize_currency( $meta[ self::META_PRICE_CURRENCY ] )
+			);
+		}
+
+		if ( array_key_exists( self::META_MATTERPORT_ID, $meta ) ) {
+			update_post_meta(
+				$post->ID,
+				self::META_MATTERPORT_ID,
+				self::sanitize_matterport_id( $meta[ self::META_MATTERPORT_ID ] )
 			);
 		}
 	}
@@ -161,6 +196,7 @@ final class Listing_Meta {
 					'meta'       => [
 						'assignedEmployee' => self::META_ASSIGNED_EMPLOYEE,
 						'priceCurrency'    => self::META_PRICE_CURRENCY,
+						'matterportId'     => self::META_MATTERPORT_ID,
 					],
 					'employees'  => $employees,
 					'currencies' => [ 'ANG', 'USD', 'EUR' ],
@@ -180,6 +216,54 @@ final class Listing_Meta {
 		unset( $allowed, $meta_key );
 
 		return current_user_can( 'edit_post', $post_id );
+	}
+
+	/**
+	 * @param mixed $value Meta value.
+	 * @return array<int>
+	 */
+	public static function sanitize_assigned_employees( $value ): array {
+		$ids = [];
+
+		if ( is_array( $value ) ) {
+			$ids = array_map( 'absint', $value );
+		} elseif ( is_numeric( $value ) ) {
+			$id = absint( $value );
+			if ( $id > 0 ) {
+				$ids = [ $id ];
+			}
+		}
+
+		$ids = array_values( array_unique( array_filter( $ids ) ) );
+
+		return array_values(
+			array_filter(
+				$ids,
+				static function ( int $employee_id ): bool {
+					$post = get_post( $employee_id );
+
+					return $post instanceof \WP_Post && 'employee' === $post->post_type;
+				}
+			)
+		);
+	}
+
+	/**
+	 * @param int $post_id Post ID.
+	 * @return array<int>
+	 */
+	public static function get_assigned_employee_ids( int $post_id ): array {
+		$value = get_post_meta( $post_id, self::META_ASSIGNED_EMPLOYEE, true );
+
+		return self::sanitize_assigned_employees( $value );
+	}
+
+	/**
+	 * @param mixed $value Meta value.
+	 * @return string
+	 */
+	public static function sanitize_matterport_id( $value ): string {
+		return sanitize_text_field( (string) $value );
 	}
 
 	/**

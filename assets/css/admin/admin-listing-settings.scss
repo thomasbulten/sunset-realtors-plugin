@@ -1,0 +1,23 @@
+/* stylelint-disable rule-empty-line-before */
+
+/**
+ * Admin - listing settings styles
+ */
+
+.sunset-listing-settings {
+	&__employees {
+		display: block;
+		margin-bottom: 12px;
+		width: 100%;
+
+		/* stylelint-disable-next-line selector-class-pattern */
+		.components-base-control__label {
+			margin-bottom: 8px;
+		}
+	}
+
+	&__employees-list {
+		display: grid;
+		gap: 0.5rem;
+	}
+}

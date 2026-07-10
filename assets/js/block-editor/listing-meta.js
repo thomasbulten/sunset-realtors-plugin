@@ -6,10 +6,22 @@
 (function (wp, config) {
 	const { registerPlugin } = wp.plugins;
 	const { PluginDocumentSettingPanel } = wp.editPost;
-	const { SelectControl, PanelRow } = wp.components;
+	const { SelectControl, CheckboxControl, TextControl, PanelRow } = wp.components;
 	const { __ } = wp.i18n;
 	const { useSelect, useDispatch } = wp.data;
 	const { createElement: el } = wp.element;
+
+	function normalizeAssignedEmployeeIds(value) {
+		if (Array.isArray(value)) {
+			return value
+				.map((id) => parseInt(id, 10))
+				.filter((id) => Number.isInteger(id) && id > 0);
+		}
+
+		const singleId = parseInt(value, 10);
+
+		return Number.isInteger(singleId) && singleId > 0 ? [singleId] : [];
+	}
 
 	function SunsetListingSettings() {
 		const postType = useSelect(
@@ -29,13 +41,11 @@
 			return null;
 		}
 
-		const assignedEmployee = meta[config.meta.assignedEmployee] ?? 0;
+		const assignedEmployees = normalizeAssignedEmployeeIds(
+			meta[config.meta.assignedEmployee],
+		);
 		const priceCurrency = meta[config.meta.priceCurrency] || 'EUR';
-
-		const employeeValue =
-			assignedEmployee && Number(assignedEmployee) > 0
-				? String(assignedEmployee)
-				: '';
+		const matterportId = meta[config.meta.matterportId] || '';
 
 		const setMetaValue = (key, value) => {
 			editPost({
@@ -56,21 +66,52 @@
 			el(
 				PanelRow,
 				null,
-				el(SelectControl, {
-					label: __('Makelaar', 'sunset-realtors-plugin'),
-					value: employeeValue,
-					options: [
+				el(
+					'div',
+					{ className: 'sunset-listing-settings__employees' },
+					el(
+						'p',
+						{ className: 'components-base-control__label' },
+						__('Makelaar', 'sunset-realtors-plugin'),
+					),
+					el(
+						'div',
 						{
-							label: __('Standaard', 'sunset-realtors-plugin'),
-							value: '',
+							className:
+								'sunset-listing-settings__employees-list',
 						},
-						...(config.employees || []),
-					],
+						...(config.employees || []).map((employee) => {
+							const employeeId = parseInt(employee.value, 10);
+
+							return el(CheckboxControl, {
+								key: employee.value,
+								label: employee.label,
+								checked: assignedEmployees.includes(employeeId),
+								onChange: (checked) => {
+									const nextValue = checked
+										? [...assignedEmployees, employeeId]
+										: assignedEmployees.filter(
+												(id) => id !== employeeId,
+											);
+
+									setMetaValue(
+										config.meta.assignedEmployee,
+										nextValue,
+									);
+								},
+							});
+						}),
+					),
+				),
+			),
+			el(
+				PanelRow,
+				null,
+				el(TextControl, {
+					label: __('Matterport ID', 'sunset-realtors-plugin'),
+					value: matterportId,
 					onChange: (value) => {
-						setMetaValue(
-							config.meta.assignedEmployee,
-							value ? parseInt(value, 10) : 0,
-						);
+						setMetaValue(config.meta.matterportId, value);
 					},
 				}),
 			),
