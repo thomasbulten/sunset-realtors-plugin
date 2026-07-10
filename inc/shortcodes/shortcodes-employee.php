@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace TAB\Sunset_Realtors\Shortcodes\Employee;
 
+use TAB\Sunset_Realtors\Listing\Listing_Meta;
 use function TAB\Sunset_Realtors\Helpers\General\get_names;
 use function TAB\Sunset_Realtors\Helpers\General\create_phone_link;
 use function TAB\Sunset_Realtors\Helpers\General\create_mailto_link;
@@ -27,52 +28,60 @@ function sunset_employee_shortcode( $args = [] ): string {
 	], $args, 'sunset_employee' );
 
 	$post_id = get_queried_object_id();
-	$get_employee = get_employee_data( $post_id );
-	if ( ! $get_employee ) {
+	$employees = get_employees_data( $post_id );
+	if ( empty( $employees ) ) {
 		return '';
 	}
 
-	$get_employee_html = get_employee_html( $get_employee );
+	$employees_html = '';
+
+	foreach ( $employees as $employee ) {
+		$employees_html .= get_employee_html( $employee );
+	}
 
 	$class = get_names( [
 		'c-employee__list',
 		$options['class'],
-	], true );
+	] );
 
 	return sprintf(
 		'<ul class="%1$s" role="list">%2$s</ul>',
 		esc_attr( $class ),
-		$get_employee_html
+		$employees_html
 	);
 }
 
 /**
- * Get the selected employee.
+ * Get the selected employees.
  *
  * @param int $post_id The post ID.
- * @return array|null The selected employee data, or null if no employee is assigned.
+ * @return array<int, array<string, mixed>> The selected employee data.
  */
-function get_employee_data( int $post_id ): ?array {
-	// Get the employee ID from the post meta.
-	$get_employee_id = get_post_meta( $post_id, '_sunset_assigned_employee', true );
-	if ( ! $get_employee_id ) {
-		return null;
+function get_employees_data( int $post_id ): array {
+	$employee_ids = Listing_Meta::get_assigned_employee_ids( $post_id );
+
+	if ( empty( $employee_ids ) ) {
+		return [];
 	}
 
-	$post = get_post( $get_employee_id );
-	if ( ! $post ) {
-		return null;
+	$employees = [];
+
+	foreach ( $employee_ids as $employee_id ) {
+		$post = get_post( $employee_id );
+
+		if ( ! $post instanceof \WP_Post ) {
+			continue;
+		}
+
+		$employees[] = [
+			'name'     => $post->post_title ?? '',
+			'image_id' => get_post_thumbnail_id( $post->ID ) ?? '',
+			'phone'    => get_post_meta( $post->ID, '_employee_phone_number', true ) ?? '',
+			'email'    => get_post_meta( $post->ID, '_employee_email_address', true ) ?? '',
+		];
 	}
 
-	// Prepare the employee data.
-	$employee_data = [
-		'name'     => $post->post_title ?? '',
-		'image_id' => get_post_thumbnail_id( $post->ID ) ?? '',
-		'phone'    => get_post_meta( $post->ID, '_employee_phone_number', true ) ?? '',
-		'email'    => get_post_meta( $post->ID, '_employee_email_address', true ) ?? '',
-	];
-
-	return $employee_data;
+	return $employees;
 }
 
 /**
@@ -86,7 +95,7 @@ function get_employee_html( array $data ): string {
 	$image = '';
 	if ( ! empty( $data['image_id'] ) ) {
 		$image_url    = wp_get_attachment_url( $data['image_id'] );
-		$image_srcset = wp_get_attachment_image_srcset( $data['image_id'], 'thumbnail' );
+		$image_srcset = wp_get_attachment_image_srcset( $data['image_id'], 'medium' );
 		$image_alt    = get_post_meta( $data['image_id'], '_wp_attachment_image_alt', true ) ?: $data['name'] ?? '';
 
 		$image = sprintf(

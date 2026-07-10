@@ -40,13 +40,29 @@ final class Listing_Gravity_Forms
 			return self::get_default_email();
 		}
 
-		// Get the employee ID from the post meta.
-		$get_employee_id = get_post_meta($post_id, '_sunset_assigned_employee', true);
-		if ( ! $get_employee_id ) {
+		$employee_ids = Listing_Meta::get_assigned_employee_ids( (int) $post_id );
+
+		if ( empty( $employee_ids ) ) {
 			return self::get_default_email();
 		}
 
-		return self::get_employee_email(intval($get_employee_id));
+		$emails = [];
+
+		foreach ( $employee_ids as $employee_id ) {
+			$employee_email = get_post_meta( $employee_id, '_employee_email_address', true );
+
+			if ( ! empty( $employee_email ) ) {
+				$emails[] = $employee_email;
+			}
+		}
+
+		if ( empty( $emails ) ) {
+			return self::get_default_email();
+		}
+
+		$emails[] = self::get_default_email();
+
+		return implode( ',', array_unique( $emails ) );
 	}
 
 	/**
