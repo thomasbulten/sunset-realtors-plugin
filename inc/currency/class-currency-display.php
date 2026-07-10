@@ -87,7 +87,7 @@ final class Currency_Display {
 			return;
 		}
 
-		Converter::sync_formatted_prices( $post_id );
+		Converter::sync_property_prices( $post_id );
 	}
 
 	/**
@@ -108,9 +108,10 @@ final class Currency_Display {
 	 * @return string
 	 */
 	public static function filter_formatted_price( string $price, \WP_Post $property ): string {
-		$stored   = Converter::get_display_prices( $property->ID );
+		$amounts  = Converter::get_display_amounts( $property->ID );
 		$currency = Converter::get_selected_currency();
-		$display  = $stored[ $currency ] ?? '';
+		$amount   = $amounts[ $currency ] ?? 0.0;
+		$display  = Converter::format( $amount, $currency );
 
 		if ( '' !== $display ) {
 			return $display;

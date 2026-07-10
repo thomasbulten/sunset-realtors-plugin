@@ -20,7 +20,7 @@ final class Converter {
 	public const SYMBOLS = [
 		'EUR' => '€',
 		'USD' => '$',
-		'ANG' => 'Cg',
+		'ANG' => 'XCG',
 	];
 
 	/**
@@ -40,7 +40,7 @@ final class Converter {
 	/** @var array<string> */
 	public const SUPPORTED_CURRENCIES = [ 'EUR', 'USD', 'ANG' ];
 
-	/** @var array<string, array<string, string>>|null */
+	/** @var array<string, array<string, float|int|string>>|null */
 	private static ?array $property_prices_cache = null;
 
 	/**
@@ -67,7 +67,7 @@ final class Converter {
 		foreach ( self::SUPPORTED_CURRENCIES as $currency ) {
 			$symbol            = self::SYMBOLS[ $currency ] ?? $currency;
 			$code              = self::DISPLAY_CODES[ $currency ] ?? $currency;
-			$labels[ $currency ] = trim( $symbol . ' ' . $code );
+			$labels[ $currency ] = $symbol === $code ? $symbol : trim( $symbol . ' ' . $code );
 		}
 
 		return $labels;
@@ -86,7 +86,7 @@ final class Converter {
 			return 0.0;
 		}
 
-		return round( $amount * $rate, 2 );
+		return round( $amount * $rate, 0 );
 	}
 
 	/**
@@ -107,7 +107,7 @@ final class Converter {
 
 		foreach ( $currencies as $currency ) {
 			$amount = $currency === $base
-				? $raw_price
+				? round( $raw_price, 0 )
 				: self::convert( $raw_price, $base, $currency );
 
 			$prices[ $currency ] = [
@@ -145,8 +145,7 @@ final class Converter {
 		}
 
 		$symbol    = self::SYMBOLS[ $currency ] ?? $currency;
-		$formatted = number_format( $amount, 2, ',', '.' );
-		$formatted = str_replace( ',00', ',-', $formatted );
+		$formatted = number_format( $amount, 0, ',', '.' ) . ',-';
 
 		return trim( $symbol . ' ' . $formatted );
 	}
@@ -181,7 +180,7 @@ final class Converter {
 	}
 
 	/**
-	 * @return array<string, array<string, string>>
+	 * @return array<string, array<string, float|int|string>>
 	 */
 	public static function get_all_property_prices(): array {
 		if ( null !== self::$property_prices_cache ) {
@@ -196,7 +195,7 @@ final class Converter {
 	}
 
 	/**
-	 * @param array<string, array<string, string>> $prices All property prices.
+	 * @param array<string, array<string, float|int|string>> $prices All property prices.
 	 * @return void
 	 */
 	public static function save_all_property_prices( array $prices ): void {
@@ -207,12 +206,44 @@ final class Converter {
 
 	/**
 	 * @param int $post_id Property post ID.
+	 * @return array<string, float>
+	 */
+	public static function get_property_amounts( int $post_id ): array {
+		$all = self::get_all_property_prices();
+
+		return self::normalize_amounts( $all[ (string) $post_id ] ?? [] );
+	}
+
+	/**
+	 * @param int $post_id Property post ID.
+	 * @return array<string, float>
+	 */
+	public static function get_display_amounts( int $post_id ): array {
+		$amounts = self::get_property_amounts( $post_id );
+
+		if ( ( $amounts[ self::DEFAULT_DISPLAY_CURRENCY ] ?? 0.0 ) > 0 ) {
+			return $amounts;
+		}
+
+		self::sync_property_prices( $post_id );
+
+		return self::get_property_amounts( $post_id );
+	}
+
+	/**
+	 * @param int $post_id Property post ID.
 	 * @return array<string, string>
 	 */
 	public static function get_formatted_prices( int $post_id ): array {
-		$all = self::get_all_property_prices();
+		$amounts   = self::get_display_amounts( $post_id );
+		$formatted = [];
 
-		return self::normalize_prices( $all[ (string) $post_id ] ?? [] );
+		foreach ( self::SUPPORTED_CURRENCIES as $currency ) {
+			$amount = $amounts[ $currency ] ?? 0.0;
+			$formatted[ $currency ] = $amount > 0 ? self::format( $amount, $currency ) : '';
+		}
+
+		return $formatted;
 	}
 
 	/**
@@ -220,14 +251,6 @@ final class Converter {
 	 * @return array<string, string>
 	 */
 	public static function get_display_prices( int $post_id ): array {
-		$prices = self::get_formatted_prices( $post_id );
-
-		if ( '' !== ( $prices[ self::DEFAULT_DISPLAY_CURRENCY ] ?? '' ) ) {
-			return $prices;
-		}
-
-		self::sync_formatted_prices( $post_id );
-
 		return self::get_formatted_prices( $post_id );
 	}
 
@@ -248,12 +271,12 @@ final class Converter {
 	}
 
 	/**
-	 * Compute and persist formatted prices for one property.
+	 * Compute and persist converted amounts for one property.
 	 *
 	 * @param int $post_id Property post ID.
 	 * @return void
 	 */
-	public static function sync_formatted_prices( int $post_id ): void {
+	public static function sync_property_prices( int $post_id ): void {
 		$all = self::get_all_property_prices();
 		$key = (string) $post_id;
 
@@ -273,21 +296,21 @@ final class Converter {
 
 		Rates_Service::ensure_rates();
 
-		$formatted = self::compute_formatted_prices( $post_id );
+		$amounts = self::compute_property_amounts( $post_id );
 
-		if ( empty( $formatted ) ) {
+		if ( empty( $amounts ) ) {
 			unset( $all[ $key ] );
 			self::save_all_property_prices( $all );
 
 			return;
 		}
 
-		$all[ $key ] = $formatted;
+		$all[ $key ] = $amounts;
 		self::save_all_property_prices( $all );
 	}
 
 	/**
-	 * Refresh formatted prices for all published properties (cron).
+	 * Refresh converted amounts for all published properties (cron).
 	 *
 	 * @return void
 	 */
@@ -312,10 +335,10 @@ final class Converter {
 				continue;
 			}
 
-			$formatted = self::compute_formatted_prices( $post_id );
+			$amounts = self::compute_property_amounts( $post_id );
 
-			if ( ! empty( $formatted ) ) {
-				$all[ (string) $post_id ] = $formatted;
+			if ( ! empty( $amounts ) ) {
+				$all[ (string) $post_id ] = $amounts;
 			}
 		}
 
@@ -325,45 +348,66 @@ final class Converter {
 
 	/**
 	 * @param int $post_id Property post ID.
-	 * @return array<string, string>
+	 * @return array<string, float>
 	 */
-	private static function compute_formatted_prices( int $post_id ): array {
+	private static function compute_property_amounts( int $post_id ): array {
 		$data = self::get_property_prices( $post_id );
 
 		if ( empty( $data['prices'] ) ) {
 			return [];
 		}
 
-		$formatted = [];
+		$amounts = [];
 
 		foreach ( $data['prices'] as $currency => $price_data ) {
-			$formatted[ $currency ] = (string) ( $price_data['formatted'] ?? '' );
+			$amount = (float) ( $price_data['amount'] ?? 0 );
+			$amounts[ $currency ] = $amount;
 		}
 
-		foreach ( [ 'EUR', 'USD', 'ANG' ] as $currency ) {
-			if ( '' === ( $formatted[ $currency ] ?? '' ) ) {
+		foreach ( self::SUPPORTED_CURRENCIES as $currency ) {
+			if ( ( $amounts[ $currency ] ?? 0.0 ) <= 0 ) {
 				return [];
 			}
 		}
 
-		return $formatted;
+		return $amounts;
 	}
 
 	/**
 	 * @param mixed $prices Stored prices.
-	 * @return array<string, string>
+	 * @return array<string, float>
 	 */
-	private static function normalize_prices( $prices ): array {
+	private static function normalize_amounts( $prices ): array {
 		if ( ! is_array( $prices ) ) {
 			return [];
 		}
 
 		$normalized = [];
 
-		foreach ( [ 'EUR', 'USD', 'ANG' ] as $currency ) {
-			$normalized[ $currency ] = isset( $prices[ $currency ] ) ? (string) $prices[ $currency ] : '';
+		foreach ( self::SUPPORTED_CURRENCIES as $currency ) {
+			$normalized[ $currency ] = self::parse_stored_amount( $prices[ $currency ] ?? 0 );
 		}
 
 		return $normalized;
+	}
+
+	/**
+	 * @param mixed $value Stored amount or legacy formatted price.
+	 * @return float
+	 */
+	private static function parse_stored_amount( $value ): float {
+		if ( is_int( $value ) || is_float( $value ) ) {
+			return (float) $value;
+		}
+
+		if ( is_string( $value ) && is_numeric( $value ) ) {
+			return (float) $value;
+		}
+
+		if ( ! is_string( $value ) || '' === $value ) {
+			return 0.0;
+		}
+
+		return self::parse_price( $value );
 	}
 }
