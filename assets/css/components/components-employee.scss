@@ -1,9 +1,10 @@
+/* stylelint-disable rule-empty-line-before */
+
 /**
  * Components - employee styles
  */
 
 .c-employee {
-
 	&__list {
 		display: grid;
 		gap: var(--global-kb-spacing-sm, 1.5rem);
@@ -35,6 +36,7 @@
 		height: 100%;
 		width: 100%;
 		object-fit: cover;
+		object-position: top;
 	}
 
 	&__content {
