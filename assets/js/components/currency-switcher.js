@@ -15,6 +15,7 @@ import {
 	initSwitcherToggle,
 	updateSwitcherUI,
 } from './currency-switcher-toggle.js';
+import { formatPrice } from './currency-format.js';
 
 const PRICE_SELECTOR = '.sunset-property-price[data-price-eur]';
 
@@ -68,7 +69,8 @@ const applyCurrency = (currency) => {
 	}
 
 	document.querySelectorAll(PRICE_SELECTOR).forEach((element) => {
-		const price = element.getAttribute(attribute);
+		const rawAmount = element.getAttribute(attribute);
+		const price = formatPrice(rawAmount, currency);
 
 		if (!price) {
 			return;
